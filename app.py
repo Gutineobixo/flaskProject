@@ -190,6 +190,38 @@ def dashboard():
 
         fig.update_layout(title=title)
 
+        def highlight_significant_data_points(fig, prices, window=10):
+            # Finding local maxima and minima
+            local_max = prices[(prices.shift(1) < prices) & (prices.shift(-1) < prices)]
+            local_min = prices[(prices.shift(1) > prices) & (prices.shift(-1) > prices)]
+
+            # Add markers for local maxima
+            fig.add_trace(
+                go.Scatter(
+                    x=local_max.index,
+                    y=local_max,
+                    mode='markers',
+                    marker=dict(color='red', size=10),
+                    name='Local Max'
+                ),
+                row=1, col=1
+            )
+
+            # Add markers for local minimums
+            fig.add_trace(
+                go.Scatter(
+                    x=local_min.index,
+                    y=local_min,
+                    mode='markers',
+                    marker=dict(color='green', size=10),
+                    name='Local Min'
+                ),
+                row=1, col=1
+            )
+
+        # Apply the min and max function
+        highlight_significant_data_points(fig, close_prices)
+
         fig = add_drawing_tools(fig, line_color)
 
         graph_html = plot(fig, output_type='div', config=plot_config)
