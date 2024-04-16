@@ -11,6 +11,7 @@
 - Development of analysis
 
 ## Libraries used
+- request
 - yfinance
 - plotly
 - pandas
