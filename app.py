@@ -1,3 +1,4 @@
+import re
 from flask import Flask, render_template, request
 import yfinance as yf
 import plotly.graph_objs as go
@@ -11,41 +12,42 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET', 'POST'])
 def dashboard():
-    tickers = 'BTC-USD'
+    default_ticker = 'BTC-USD'
     period = '1y'
     line_color = '#0000ff'
 
     if request.method == 'POST':
-        tickers = request.form.get('tickers', tickers)
+        tickers = request.form.get('tickers', default_ticker)
         period = request.form.get('period', period)
         line_color = request.form.get('lineColor', line_color)
     else:
-        tickers = request.args.get('tickers', tickers)
+        tickers = request.args.get('tickers', default_ticker)
         period = request.args.get('period', period)
         line_color = request.args.get('lineColor', line_color)
 
+    # Validate and filter tickers for cryptocurrency format
     tickers_list = tickers.split(',')
+    valid_tickers = [ticker for ticker in tickers_list if re.match(r'^[A-Z]{1,5}-USD$', ticker)]
+    if not valid_tickers:
+        return render_template('error.html', error="No valid cryptocurrency tickers provided.")
 
     try:
-        # Download data from Yahoo Finance
-        data = yf.download(tickers_list, period=period, interval="1d")
+        data = yf.download(valid_tickers, period=period, interval="1d")
         if data.empty:
             return render_template('error.html', error="No data received for the provided tickers.")
     except Exception as e:
         return render_template('error.html', error=str(e))
 
-    # Setup subplot types
     fig = make_subplots(
         rows=1, cols=2,
         column_widths=[0.7, 0.3],
         subplot_titles=('Historical Price', 'Buy Indicator'),
-        specs=[[{"type": "xy"}, {"type": "domain"}]]  # Second subplot is 'domain'
+        specs=[[{"type": "xy"}, {"type": "domain"}]]
     )
 
     is_multi_index = isinstance(data.columns, pd.MultiIndex)
-    reference_value = 100000  # Arbitrary reference value
+    reference_value = 100000
 
-    # Settings to add drawing tools to the mode bar
     plot_config = {
         'modeBarButtonsToAdd': [
             'drawline',
@@ -57,14 +59,14 @@ def dashboard():
         ],
     }
 
-    for ticker in tickers_list:
+    for ticker in valid_tickers:
         try:
             if is_multi_index:
                 close_prices = data[(ticker, 'Close')].dropna()
             else:
                 close_prices = data['Close'].dropna()
 
-            # Ichimoku Cloud Calculate
+            # Ichimoku Cloud Calculation
             high_prices = data[(ticker, 'High')].dropna() if is_multi_index else data['High'].dropna()
             low_prices = data[(ticker, 'Low')].dropna() if is_multi_index else data['Low'].dropna()
 
@@ -81,7 +83,7 @@ def dashboard():
 
             chikou_span = close_prices.shift(-26)
 
-            # Add lines for Ichimoku Cloud
+            # Add Ichimoku Cloud traces
             fig.add_trace(
                 go.Scatter(x=close_prices.index, y=tenkan_sen, line=dict(color='red', width=1.5), name='Tenkan Sen'),
                 row=1, col=1)
