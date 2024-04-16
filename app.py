@@ -146,7 +146,7 @@ def dashboard():
                 fig.update_layout(
                     dragmode='drawrect',
                     newshape=dict(line=dict(color=line_color, width=2)),  # Aplica a cor escolhida
-                    title_text='Interactive Financial Dashboard with Drawing Tools'
+                    title_text='Interactive Cryptocurrency Financial Dashboard'
                 )
                 return fig
 
@@ -194,7 +194,6 @@ def dashboard():
 
         graph_html = plot(fig, output_type='div', config=plot_config)
         return render_template('dashboard.html', graph_html=graph_html, tickers=tickers)
-
 
 if __name__ == '__main__':
     app.run(debug=False)
