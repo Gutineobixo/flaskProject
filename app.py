@@ -27,6 +27,7 @@ def dashboard():
     tickers_list = tickers.split(',')
 
     try:
+        # Download data from Yahoo Finance
         data = yf.download(tickers_list, period=period, interval="1d")
         if data.empty:
             return render_template('error.html', error="No data received for the provided tickers.")
